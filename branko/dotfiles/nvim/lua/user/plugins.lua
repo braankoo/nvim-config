@@ -27,10 +27,19 @@ local use = require('packer').use
 
 use 'wbthomason/packer.nvim'
 
+use ({
+  'folke/tokyonight.nvim',
+  config = function()
+    vim.cmd[[colorscheme tokyonight]]
+  end
+})
+
 use({
         'jessarcher/onedark.nvim',
         config = function()
-            vim.cmd('colorscheme onedark')
+
+	    vim.o.termguicolors = true
+            vim.cmd('colorscheme tokyonight-moon')
 
             vim.api.nvim_set_hl(0,'FloatBorder',{
 
@@ -141,6 +150,7 @@ use('tpope/vim-repeat')
             requires = {
                 'nvim-lua/plenary.nvim',
                 'kyazdani42/nvim-web-devicons',
+                'nvim-telescope/telescope-dap.nvim',
                 'nvim-telescope/telescope-live-grep-args.nvim',
                 {
                     'nvim-telescope/telescope-fzf-native.nvim', run ='make'
@@ -242,8 +252,9 @@ use('tpope/vim-repeat')
                 'williamboman/mason.nvim',
                 'williamboman/mason-lspconfig.nvim',
                 'b0o/schemastore.nvim',
-                'jose-elias-alvarez/null-ls.nvim',
-                'jayp0521/mason-null-ls.nvim'
+                'nvimtools/none-ls.nvim',
+                'jay-babu/mason-null-ls.nvim',
+                'nvimtools/none-ls-extras.nvim'
             },
             config = function()
                 require('user/plugins/lspconfig')
@@ -302,18 +313,38 @@ use('tpope/vim-repeat')
             end,
         })
 use({
-    'github/copilot.vim'
-})
-use({
-    'tpope/vim-surround'
+    'github/copilot.vim',
 })
 use({
     'mg979/vim-visual-multi', branch = 'master'
 })
+  use({
+    'folke/which-key.nvim',
+    config = function()
+        require('which-key').setup({global = false})
+    end,
+  })
 
+use({
+    'lewis6991/impatient.nvim',
+    config = function()
+        require('impatient')
+    end,
+})
+use({
+    'ThePrimeagen/harpoon'
+})
+
+use({'mfussenegger/nvim-dap',
+    config = function()
+        require('user.plugins.dap')
+    end
+})
+use({
+    'fatih/vim-go',
+    run = ':GoUpdateBinaries',
+})
 require('user.plugins.copilot-chat')(use)
-
-
     if packer_bootstrap then
         require('packer').sync()
     end
@@ -323,4 +354,4 @@ require('user.plugins.copilot-chat')(use)
         autocmd!
         autocmd BufWritePost plugins.lua source <afile> | PackerCompile
     augroup end
-    ]])
+   ]])

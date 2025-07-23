@@ -1,7 +1,7 @@
 return function(use)
   use({
     "CopilotC-Nvim/CopilotChat.nvim",
-    branch = "canary",
+    branch = "main",
     requires = {
       { "zbirenbaum/copilot.lua" },  -- you can also use { "github/copilot.vim" }
       { "nvim-lua/plenary.nvim" },   -- needed for curl, log wrapper

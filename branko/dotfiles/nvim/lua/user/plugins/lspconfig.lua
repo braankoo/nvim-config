@@ -9,9 +9,14 @@ local capabilities = require('cmp_nvim_lsp').default_capabilities(vim.lsp.protoc
 require('lspconfig').intelephense.setup({capabilities = capabilities })
 
 require('lspconfig').volar.setup({
-        capabilities = capabilities,
-        filetypes = {'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue', 'json'}
+        filetypes = {'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue', 'json'},
+        init_options = {
+        vue = {
+          hybridMode = false,
+        },
+      },
     })
+
 
 -- Tailwind
 require('lspconfig').tailwindcss.setup({capabilities = capabilities })
@@ -26,47 +31,78 @@ require('lspconfig').jsonls.setup({
         },
     })
 
+-- GO
+require('lspconfig').gopls.setup({
+  capabilities = require('cmp_nvim_lsp').default_capabilities(),
+  settings = {
+    gopls = {
+      gofumpt = true,
+      staticcheck = true,
+    },
+  },
+})
+
 local null_ls = require('null-ls')
+null_ls.setup({
+    sources = {
+        null_ls.builtins.formatting.stylua,
+        null_ls.builtins.completion.spell,
+        require("none-ls.diagnostics.eslint"), -- requires none-ls-extras.nvim
+    },
+})
+
     local augroup = vim.api.nvim_create_augroup("LspFormatting", {})
-    null_ls.setup({
-      temp_dir = '/tmp',
-      sources = {
-        null_ls.builtins.diagnostics.eslint_d.with({
-          condition = function(utils)
-            return utils.root_has_file({ '.eslintrc.js' })
-          end,
-        }),
-        -- null_ls.builtins.diagnostics.phpstan, -- TODO: Only if config file
-        null_ls.builtins.diagnostics.trail_space.with({ disabled_filetypes = { 'NvimTree' } }),
-        null_ls.builtins.formatting.eslint_d.with({
-          condition = function(utils)
-            return utils.root_has_file({ '.eslintrc.js', '.eslintrc.json' })
-          end,
-        }),
-        null_ls.builtins.formatting.pint.with({
-          condition = function(utils)
-            return utils.root_has_file({ 'vendor/bin/pint' })
-          end,
-        }),
-        null_ls.builtins.formatting.prettier.with({
-          condition = function(utils)
-            return utils.root_has_file({ '.prettierrc', '.prettierrc.json', '.prettierrc.yml', '.prettierrc.js', 'prettier.config.js' })
-          end,
-        }),
-      },
-      on_attach = function(client, bufnr)
-        if client.supports_method("textDocument/formatting") then
-          vim.api.nvim_clear_autocmds({ group = augroup, buffer = bufnr })
-          vim.api.nvim_create_autocmd("BufWritePre", {
-            group = augroup,
-            buffer = bufnr,
-            callback = function()
-              vim.lsp.buf.format({ bufnr = bufnr, timeout_ms = 5000 })
-            end,
-          })
-        end
+    
+null_ls.setup({
+  temp_dir = '/tmp',
+  sources = {
+    -- eslint (requires none-ls-extras.nvim)
+    require("none-ls.diagnostics.eslint"),
+    
+    -- trail_space
+    null_ls.builtins.diagnostics.trail_space.with({
+      disabled_filetypes = { "NvimTree" },
+    }),
+    
+    -- PHP pint
+    null_ls.builtins.formatting.pint.with({
+      condition = function(utils)
+        return utils.root_has_file({ "vendor/bin/pint" })
       end,
-    })
+    }),
+    
+    -- prettier
+    null_ls.builtins.formatting.prettier.with({
+      condition = function(utils)
+        return utils.root_has_file({
+          ".prettierrc",
+          ".prettierrc.json",
+          ".prettierrc.yml",
+          ".prettierrc.js",
+          "prettier.config.js",
+        })
+      end,
+    }),
+
+    -- stylua
+    null_ls.builtins.formatting.stylua,
+
+    -- spell completion
+    null_ls.builtins.completion.spell,
+  },
+  on_attach = function(client, bufnr)
+    if client.supports_method("textDocument/formatting") then
+      vim.api.nvim_clear_autocmds({ group = augroup, buffer = bufnr })
+      vim.api.nvim_create_autocmd("BufWritePre", {
+        group = augroup,
+        buffer = bufnr,
+        callback = function()
+          vim.lsp.buf.format({ bufnr = bufnr, timeout_ms = 5000 })
+        end,
+      })
+    end
+  end,
+})
 
     require('mason-null-ls').setup({ automatic_installation = true })
 
@@ -78,9 +114,10 @@ vim.keymap.set('n', 'gr', ':Telescope lsp_references<CR>')
 vim.keymap.set('n', '<Leader>lr', ':LspRestart<CR>', { silent = true })
 vim.keymap.set('n', 'K', '<cmd>lua vim.lsp.buf.hover()<CR>')
 vim.keymap.set('n', '<Leader>rn', '<cmd>lua vim.lsp.buf.rename()<CR>')
-
+vim.keymap.set('n', 'jgd', '<cmd>lua vim.lsp.buf.definition()<CR>')
 vim.api.nvim_create_user_command('Format', function() vim.lsp.buf.format({ timeout_ms = 5000 }) end, {})
 
+vim.g.go_doc_popup_window = 1
 
 vim.diagnostic.config({
         virtual_text = true,
