@@ -1,325 +1,353 @@
-local ensure_packer = function()
-    local fn = vim.fn
-    local install_path = fn.stdpath("data") .. "/site/pack/packer/start/packer.nvim"
-    if fn.empty(fn.glob(install_path)) > 0 then
-        fn.system({ "git", "clone", "--depth", "1", "https://github.com/wbthomason/packer.nvim", install_path })
-        vim.cmd([[packadd packer.nvim]])
-        return true
+-- Bootstrap lazy.nvim
+local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
+if not (vim.uv or vim.loop).fs_stat(lazypath) then
+    local lazyrepo = "https://github.com/folke/lazy.nvim.git"
+    local out = vim.fn.system({ "git", "clone", "--filter=blob:none", "--branch=stable", lazyrepo, lazypath })
+    if vim.v.shell_error ~= 0 then
+        vim.api.nvim_echo({
+            { "Failed to clone lazy.nvim:\n", "ErrorMsg" },
+            { out, "WarningMsg" },
+            { "\nPress any key to exit..." },
+        }, true, {})
+        vim.fn.getchar()
+        os.exit(1)
     end
-    return false
 end
+vim.opt.rtp:prepend(lazypath)
 
-local packer_bootstrap = ensure_packer()
+require("lazy").setup({
+    -- Colorscheme — eager, loaded first.
+    {
+        "folke/tokyonight.nvim",
+        lazy = false,
+        priority = 1000,
+        config = function()
+            vim.cmd("colorscheme tokyonight-moon")
 
-require("packer").reset()
-require("packer").init({
-    compile_path = vim.fn.stdpath("data") .. "/site/plugin/packer_compiled.lua",
-    display = {
-        open_fn = function()
-            return require("packer.util").float({ border = "solid" })
+            local normal_float_bg = vim.api.nvim_get_hl(0, { name = "NormalFloat", link = false }).bg
+            local cursor_line_bg = vim.api.nvim_get_hl(0, { name = "CursorLine", link = false }).bg
+
+            vim.api.nvim_set_hl(0, "FloatBorder", { fg = normal_float_bg, bg = normal_float_bg })
+            vim.api.nvim_set_hl(0, "CursorLineBg", { fg = cursor_line_bg, bg = cursor_line_bg })
+            vim.api.nvim_set_hl(0, "NvimTreeIndentMarker", { fg = "#30323E" })
+            vim.api.nvim_set_hl(0, "IndentBlanklineChar", { fg = "#2F313C" })
         end,
     },
-})
 
-local use = require("packer").use
+    -- Editing essentials.
+    { "tpope/vim-commentary", event = "VeryLazy" },
+    { "tpope/vim-surround",   event = "VeryLazy" },
+    { "tpope/vim-unimpaired", event = "VeryLazy" },
+    { "tpope/vim-repeat",     event = "VeryLazy" },
+    { "tpope/vim-sleuth",     event = "BufReadPost" },
+    {
+        "tpope/vim-eunuch",
+        cmd = { "Rename", "Move", "Delete", "Mkdir", "SudoEdit", "SudoWrite", "Wall" },
+    },
 
-use("wbthomason/packer.nvim")
+    -- Navigation.
+    { "christoomey/vim-tmux-navigator" },
+    { "farmergreg/vim-lastplace",        event = "BufReadPre" },
+    {
+        "nelstrom/vim-visual-star-search",
+        keys = { { "*", mode = "v" }, { "#", mode = "v" } },
+    },
+    { "jessarcher/vim-heritage", event = "BufNewFile" },
 
-use({
-    "folke/tokyonight.nvim",
-    config = function()
-        vim.cmd("colorscheme tokyonight-moon")
+    -- Text objects.
+    {
+        "whatyouhide/vim-textobj-xmlattr",
+        dependencies = { "kana/vim-textobj-user" },
+        ft = { "html", "xml", "vue", "javascriptreact", "typescriptreact" },
+    },
 
-        local normal_float_bg = vim.api.nvim_get_hl(0, { name = "NormalFloat", link = false }).bg
-        local cursor_line_bg = vim.api.nvim_get_hl(0, { name = "CursorLine", link = false }).bg
+    -- Project root.
+    {
+        "airblade/vim-rooter",
+        lazy = false,
+        init = function()
+            vim.g.rooter_manual_only = 1
+        end,
+        config = function()
+            vim.cmd("Rooter")
+        end,
+    },
 
-        vim.api.nvim_set_hl(0, "FloatBorder", { fg = normal_float_bg, bg = normal_float_bg })
-        vim.api.nvim_set_hl(0, "CursorLineBg", { fg = cursor_line_bg, bg = cursor_line_bg })
-        vim.api.nvim_set_hl(0, "NvimTreeIndentMarker", { fg = "#30323E" })
-        vim.api.nvim_set_hl(0, "IndentBlanklineChar", { fg = "#2F313C" })
-    end,
-})
+    -- UX.
+    {
+        "windwp/nvim-autopairs",
+        event = "InsertEnter",
+        config = function()
+            require("nvim-autopairs").setup()
+        end,
+    },
+    {
+        "karb94/neoscroll.nvim",
+        event = "VeryLazy",
+        config = function()
+            require("neoscroll").setup()
+        end,
+    },
+    {
+        "sickill/vim-pasta",
+        event = "VeryLazy",
+        init = function()
+            vim.g.pasta_disabled_filetypes = { "fugitive" }
+        end,
+    },
 
--- Commenting support
-use("tpope/vim-commentary")
+    -- Buffer management.
+    {
+        "famiu/bufdelete.nvim",
+        cmd = "Bdelete",
+        keys = { { "<Leader>q", ":Bdelete<CR>" } },
+    },
 
--- Add, change and delete surrounding text
-use("tpope/vim-surround")
+    -- Splitjoin.
+    {
+        "AndrewRadev/splitjoin.vim",
+        keys = { "gJ", "gS" },
+        init = function()
+            vim.g.splitjoin_html_attributes_bracket_on_new_line = 1
+            vim.g.splitjoin_trailing_comma = 1
+            vim.g.splitjoin_php_method_chain_full = 1
+        end,
+    },
 
--- Useful commands like :Rename and SudoWrite
-use("tpope/vim-eunuch")
+    -- Telescope.
+    {
+        "nvim-telescope/telescope.nvim",
+        cmd = "Telescope",
+        keys = { "<leader>f", "<leader>F", "<leader>b", "<leader>g", "<leader>h", "<leader>s" },
+        dependencies = {
+            "nvim-lua/plenary.nvim",
+            "kyazdani42/nvim-web-devicons",
+            "nvim-telescope/telescope-dap.nvim",
+            "nvim-telescope/telescope-live-grep-args.nvim",
+            { "nvim-telescope/telescope-fzf-native.nvim", build = "make" },
+        },
+        config = function()
+            require("user/plugins/telescope")
+        end,
+    },
 
--- pairs of hand bracket mappings
-use("tpope/vim-unimpaired")
+    -- File explorer.
+    {
+        "kyazdani42/nvim-tree.lua",
+        cmd = { "NvimTreeToggle", "NvimTreeOpen", "NvimTreeFocus", "NvimTreeFindFile", "NvimTreeFindFileToggle" },
+        keys = { { "<Leader>n", ":NvimTreeFindFileToggle<CR>", desc = "Toggle NvimTree" } },
+        dependencies = { "kyazdani42/nvim-web-devicons" },
+        config = function()
+            require("user/plugins/nvim-tree")
+        end,
+    },
 
--- indention
-use("tpope/vim-sleuth")
+    -- Statusline / bufferline / indent guides.
+    {
+        "nvim-lualine/lualine.nvim",
+        event = "VeryLazy",
+        dependencies = { "kyazdani42/nvim-web-devicons" },
+        config = function()
+            require("user/plugins/lualine")
+        end,
+    },
+    {
+        "akinsho/bufferline.nvim",
+        event = "VeryLazy",
+        dependencies = { "kyazdani42/nvim-web-devicons", "folke/tokyonight.nvim" },
+        config = function()
+            require("user/plugins/bufferline")
+        end,
+    },
+    {
+        "lukas-reineke/indent-blankline.nvim",
+        event = "BufReadPre",
+        config = function()
+            require("user/plugins/indent-blankline")
+        end,
+    },
 
-use("tpope/vim-repeat")
--- add more languages
-
---navigate between tmux and vim
-use("christoomey/vim-tmux-navigator")
-
-use("farmergreg/vim-lastplace")
-
-use("nelstorm/vim-visual-star-search")
-
-use("jessarcher/vim-heritage")
-
-use({
-    "whatyouhide/vim-textobj-xmlattr",
-    requires = "kana/vim-textobj-user",
-})
-
-use({
-    "airblade/vim-rooter",
-    setup = function()
-        vim.g.rooter_manual_only = 1
-    end,
-    config = function()
-        vim.cmd("Rooter")
-    end,
-})
-
-use({
-    "windwp/nvim-autopairs",
-    config = function()
-        require("nvim-autopairs").setup()
-    end,
-})
-
-use({
-    "karb94/neoscroll.nvim",
-    config = function()
-        require("neoscroll").setup()
-    end,
-})
-
-use({
-    "famiu/bufdelete.nvim",
-    config = function()
-        vim.keymap.set("n", "<Leader>q", ":Bdelete<CR>")
-    end,
-})
-
-use({
-    "AndrewRadev/splitjoin.vim",
-    config = function()
-        vim.g.splitjoin_html_attributes_bracket_on_new_line = 1
-        vim.g.splitjoin_trailing_comma = 1
-        vim.g.splitjoin_php_method_chain_full = 1
-    end,
-})
-use({
-    "sickill/vim-pasta",
-    config = function()
-        vim.g.pasta_disabled_filetypes = { "fugitive" }
-    end,
-})
-
-use({
-    "nvim-telescope/telescope.nvim",
-    requires = {
-        "nvim-lua/plenary.nvim",
-        "kyazdani42/nvim-web-devicons",
-        "nvim-telescope/telescope-dap.nvim",
-        "nvim-telescope/telescope-live-grep-args.nvim",
-        {
-            "nvim-telescope/telescope-fzf-native.nvim",
-            run = "make",
+    -- Git.
+    {
+        "lewis6991/gitsigns.nvim",
+        event = "BufReadPre",
+        config = function()
+            require("user/plugins/gitsigns")
+        end,
+    },
+    {
+        "tpope/vim-fugitive",
+        cmd = {
+            "G", "Git", "Gdiff", "Gdiffsplit", "Gvdiffsplit",
+            "Gread", "Gwrite", "Ggrep", "Glgrep",
+            "GMove", "GDelete", "GBrowse", "GRemove", "GRename",
         },
     },
-    config = function()
-        require("user/plugins/telescope")
-    end,
-})
 
-use({
-    "kyazdani42/nvim-tree.lua",
-    requires = "kyazdani42/nvim-web-devicons",
-    config = function()
-        require("user/plugins/nvim-tree")
-    end,
-})
-
-use({
-    "nvim-lualine/lualine.nvim",
-    requires = "kyazdani42/nvim-web-devicons",
-    config = function()
-        require("user/plugins/lualine")
-    end,
-})
-use({
-    "akinsho/bufferline.nvim",
-    requires = "kyazdani42/nvim-web-devicons",
-    after = "tokyonight.nvim",
-    config = function()
-        require("user/plugins/bufferline")
-    end,
-})
-
-use({
-    "lukas-reineke/indent-blankline.nvim",
-    config = function()
-        require("user/plugins/indent-blankline")
-    end,
-})
-use({
-    "glepnir/dashboard-nvim",
-    event = "VimEnter",
-    config = function()
-        require("user/plugins/dashboard")
-    end,
-    requires = { "nvim-tree/nvim-web-devicons" },
-})
-use({
-    "lewis6991/gitsigns.nvim",
-    config = function()
-        require("user/plugins/gitsigns")
-    end,
-})
-use("tpope/vim-fugitive")
-use({
-    "kdheepak/lazygit.nvim",
-    -- optional for floating window border decoration
-    requires = {
-        "nvim-lua/plenary.nvim",
+    -- Docker.
+    {
+        "crnvl96/lazydocker.nvim",
+        cmd = "LazyDocker",
+        keys = "<leader>ld",
+        dependencies = { "MunifTanjim/nui.nvim" },
+        config = function()
+            require("lazydocker").setup()
+        end,
     },
-})
-use({
-    "crnvl96/lazydocker.nvim",
-    config = function()
-        require("lazydocker").setup()
-    end,
-    requires = {
-        "MunifTanjim/nui.nvim",
+
+    -- Floating terminal.
+    {
+        "voldikss/vim-floaterm",
+        cmd = { "FloatermNew", "FloatermToggle", "FloatermShow", "FloatermSend" },
+        keys = {
+            { "<leader>ft", "<cmd>FloatermToggle<CR>",                desc = "Toggle floaterm" },
+            { "<F1>",       "<cmd>FloatermToggle<CR>",                desc = "Toggle floaterm" },
+            { "<F1>",       "<C-\\><C-n><cmd>FloatermToggle<CR>",     desc = "Toggle floaterm", mode = "t" },
+        },
+        config = function()
+            require("user/plugins/floaterm")
+        end,
     },
-})
-use({
-    "voldikss/vim-floaterm",
-    config = function()
-        require("user/plugins/floaterm")
-    end,
-})
 
-use({
-    "nvim-treesitter/nvim-treesitter",
-    run = function()
-        require("nvim-treesitter.install").update({ with_sync = true })
-    end,
-    requires = {
-        "JoosepAlviste/nvim-ts-context-commentstring",
-        "nvim-treesitter/nvim-treesitter-textobjects",
+    -- Treesitter (pinned to `master` — `main` branch is the new minimal rewrite
+    -- which drops `nvim-treesitter.configs` and most of the modules we use).
+    {
+        "nvim-treesitter/nvim-treesitter",
+        branch = "master",
+        event = { "BufReadPost", "BufNewFile" },
+        build = ":TSUpdate",
+        dependencies = {
+            "JoosepAlviste/nvim-ts-context-commentstring",
+            { "nvim-treesitter/nvim-treesitter-textobjects", branch = "master" },
+        },
+        config = function()
+            require("user/plugins/treesitter")
+        end,
     },
-    config = function()
-        require("user/plugins/treesitter")
-    end,
-})
-use({
-    "neovim/nvim-lspconfig",
-    requires = {
-        "williamboman/mason.nvim",
-        "williamboman/mason-lspconfig.nvim",
-        "b0o/schemastore.nvim",
-        "nvimtools/none-ls.nvim",
-        "jay-babu/mason-null-ls.nvim",
-        "nvimtools/none-ls-extras.nvim",
+
+    -- LSP.
+    {
+        "neovim/nvim-lspconfig",
+        event = { "BufReadPre", "BufNewFile" },
+        dependencies = {
+            "williamboman/mason.nvim",
+            "williamboman/mason-lspconfig.nvim",
+            "b0o/schemastore.nvim",
+            "nvimtools/none-ls.nvim",
+            "jay-babu/mason-null-ls.nvim",
+            "nvimtools/none-ls-extras.nvim",
+        },
+        config = function()
+            require("user/plugins/lspconfig")
+        end,
     },
-    config = function()
-        require("user/plugins/lspconfig")
-    end,
-})
-use({
-    "hrsh7th/nvim-cmp",
-    requires = {
-        "hrsh7th/cmp-nvim-lsp",
-        "hrsh7th/cmp-nvim-lsp-signature-help",
-        "hrsh7th/cmp-buffer",
-        "hrsh7th/cmp-path",
-        "L3MON4D3/LuaSnip",
-        "saadparwaiz1/cmp_luasnip",
-        "onsails/lspkind-nvim",
+
+    -- Completion.
+    {
+        "hrsh7th/nvim-cmp",
+        event = "InsertEnter",
+        dependencies = {
+            "hrsh7th/cmp-nvim-lsp",
+            "hrsh7th/cmp-nvim-lsp-signature-help",
+            "hrsh7th/cmp-buffer",
+            "hrsh7th/cmp-path",
+            "L3MON4D3/LuaSnip",
+            "saadparwaiz1/cmp_luasnip",
+            "onsails/lspkind-nvim",
+        },
+        config = function()
+            require("user/plugins/cmp")
+        end,
     },
-    config = function()
-        require("user/plugins/cmp")
-    end,
-})
-use({
-    "phpactor/phpactor",
-    ft = "php",
-    run = "composer install -no-dev --optimize-autoload",
-    config = function()
-        vim.keymap.set("n", "<Leader>pm", ":PhpactorContextMenu<CR>")
-        vim.keymap.set("n", "<Leader>pn", ":PhpactorClassNew<CR>")
-    end,
-})
 
-use({
-    "tpope/vim-projectionist",
-    requires = "tpope/vim-dispatch",
-    config = function()
-        require("user/plugins/projectionist")
-    end,
-})
+    -- PHP.
+    {
+        "phpactor/phpactor",
+        ft = "php",
+        build = "composer install --no-dev --optimize-autoload",
+        keys = {
+            { "<Leader>pm", ":PhpactorContextMenu<CR>" },
+            { "<Leader>pn", ":PhpactorClassNew<CR>" },
+        },
+    },
 
-use({
-    "vim-test/vim-test",
-    config = function()
-        require("user/plugins/vim-test")
-    end,
-})
-use({
-    "tpope/vim-dadbod",
-})
-use({
-    "kristijanhusak/vim-dadbod-ui",
-})
-use({
-    "kristijanhusak/vim-dadbod-completion",
-    config = function()
-        require("user/config/dadbod").setup()
-    end,
-})
----use({
----    'github/copilot.vim',
----})
-use({
-    "mg979/vim-visual-multi",
-    branch = "master",
-})
-use({
-    "folke/which-key.nvim",
-    config = function()
-        require("which-key").setup({ global = false })
-    end,
-})
+    -- Projectionist.
+    {
+        "tpope/vim-projectionist",
+        event = "VeryLazy",
+        dependencies = { "tpope/vim-dispatch" },
+        cmd = { "A", "AS", "AV", "AT", "AD", "AR", "E", "Cd", "Lcd" },
+        config = function()
+            require("user/plugins/projectionist")
+        end,
+    },
 
-use({
-    "ThePrimeagen/harpoon",
+    -- Testing.
+    {
+        "vim-test/vim-test",
+        cmd = { "TestNearest", "TestFile", "TestSuite", "TestLast", "TestVisit" },
+        keys = {
+            { "<Leader>tn", ":TestNearest<CR>", desc = "Test nearest" },
+            { "<Leader>tf", ":TestFile<CR>",    desc = "Test file" },
+            { "<Leader>ts", ":TestSuite<CR>",   desc = "Test suite" },
+            { "<Leader>tl", ":TestLast<CR>",    desc = "Test last" },
+            { "<Leader>tv", ":TestVisit<CR>",   desc = "Test visit" },
+        },
+        config = function()
+            require("user/plugins/vim-test")
+        end,
+    },
+
+    -- DB.
+    {
+        "tpope/vim-dadbod",
+        cmd = {
+            "DB", "DBUI", "DBUIToggle", "DBUIAddConnection",
+            "DBUIFindBuffer", "DBUILastQueryInfo", "DBUIRenameBuffer",
+        },
+        dependencies = {
+            "kristijanhusak/vim-dadbod-ui",
+            {
+                "kristijanhusak/vim-dadbod-completion",
+                config = function()
+                    require("user/config/dadbod").setup()
+                end,
+            },
+        },
+    },
+
+    -- Multi cursor.
+    { "mg979/vim-visual-multi", branch = "master", keys = "<C-n>" },
+
+    -- Which-key.
+    {
+        "folke/which-key.nvim",
+        event = "VeryLazy",
+        config = function()
+            require("which-key").setup({ global = false })
+        end,
+    },
+
+    -- Harpoon v2.
+    {
+        "ThePrimeagen/harpoon",
+        branch = "harpoon2",
+        dependencies = { "nvim-lua/plenary.nvim" },
+        keys = { "<leader>ma", "<leader>mt" },
+        config = function()
+            require("harpoon"):setup()
+        end,
+    },
+
+    -- DAP.
+    {
+        "mfussenegger/nvim-dap",
+        keys = { "<F5>", "<F10>", "<F11>", "<F12>", "<leader>dh", "<leader>dp", "<leader>df", "<leader>ds" },
+        config = function()
+            require("user.plugins.dap")
+        end,
+    },
+
+    -- nui (eager: deploy.lua does top-level require of nui.menu/nui.input).
+    { "MunifTanjim/nui.nvim", lazy = false },
 })
-
-use({
-    "mfussenegger/nvim-dap",
-    config = function()
-        require("user.plugins.dap")
-    end,
-})
-use({
-    "fatih/vim-go",
-    run = ":GoUpdateBinaries",
-})
-
-require("user.plugins.deploy")
-
----require('user.plugins.copilot-chat')(use)
----    if packer_bootstrap then
----     require('packer').sync()
----  end
-
----  vim.cmd([[
----   augroup packer_user_config
----    autocmd!
----    autocmd BufWritePost plugins.lua source <afile> | PackerCompile
---- augroup end
---- ]])

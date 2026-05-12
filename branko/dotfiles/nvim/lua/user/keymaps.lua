@@ -1,7 +1,3 @@
--- Space is my leader.
-vim.g.mapleader = ' '
-vim.g.maplocalleader = ' '
-
 -- Clear search highlighting.
 vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 
@@ -103,8 +99,13 @@ vim.keymap.set('n', '<leader>cfn', ':CopyFilename<CR>')
 vim.api.nvim_set_keymap('v', '<leader>ccyp', '"+y :CopilotChat<CR>i<C-R>+<CR>', { noremap = true, silent = true })
 
 
-vim.keymap.set('n', '<leader>ma', ':lua require("harpoon.mark").add_file()<CR>', { desc = 'Add file to harpoon' })
-vim.keymap.set('n', '<leader>mt', ':lua require("harpoon.ui").toggle_quick_menu()<CR>', { desc = 'Toggle harpoon menu' })
+vim.keymap.set('n', '<leader>ma', function()
+  require("harpoon"):list():add()
+end, { desc = 'Add file to harpoon' })
+vim.keymap.set('n', '<leader>mt', function()
+  local harpoon = require("harpoon")
+  harpoon.ui:toggle_quick_menu(harpoon:list())
+end, { desc = 'Toggle harpoon menu' })
 
 
 

@@ -1,12 +1,10 @@
 require('mason').setup()
-require('mason-lspconfig').setup({automatic_installation = true})
-
+require('mason-lspconfig').setup({ automatic_installation = true })
 
 local capabilities = require('cmp_nvim_lsp').default_capabilities(vim.lsp.protocol.make_client_capabilities())
 
---PHP
-
-require('lspconfig').intelephense.setup({
+-- PHP
+vim.lsp.config('intelephense', {
     capabilities = capabilities,
     settings = {
         intelephense = {
@@ -17,47 +15,47 @@ require('lspconfig').intelephense.setup({
                 "gd",
                 "pdo",
                 "mysql",
-                "mysqli"
-            }
-        }
-    },
-    on_attach = function(client, bufnr)
-        print("Intelephense pokrenuo sa settings:", vim.inspect(client.config.settings))
-    end
-})
-require('lspconfig').volar.setup({
-        filetypes = {'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue', 'json'},
-        init_options = {
-        vue = {
-          hybridMode = false,
-        },
-      },
-    })
-
-
--- Tailwind
-require('lspconfig').tailwindcss.setup({capabilities = capabilities })
-
--- JSON
-require('lspconfig').jsonls.setup({
-        capabilities = capabilities,
-        settings = {
-            json = {
-                schemas = require('schemastore').json.schemas(),
+                "mysqli",
             },
         },
-    })
-
--- GO
-require('lspconfig').gopls.setup({
-  capabilities = require('cmp_nvim_lsp').default_capabilities(),
-  settings = {
-    gopls = {
-      gofumpt = true,
-      staticcheck = true,
     },
-  },
 })
+
+-- Vue / TS / JS
+vim.lsp.config('volar', {
+    filetypes = { 'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue', 'json' },
+    init_options = {
+        vue = {
+            hybridMode = false,
+        },
+    },
+})
+
+-- Tailwind
+vim.lsp.config('tailwindcss', { capabilities = capabilities })
+
+-- JSON
+vim.lsp.config('jsonls', {
+    capabilities = capabilities,
+    settings = {
+        json = {
+            schemas = require('schemastore').json.schemas(),
+        },
+    },
+})
+
+-- Go
+vim.lsp.config('gopls', {
+    capabilities = capabilities,
+    settings = {
+        gopls = {
+            gofumpt = true,
+            staticcheck = true,
+        },
+    },
+})
+
+vim.lsp.enable({ 'intelephense', 'volar', 'tailwindcss', 'jsonls', 'gopls' })
 
 local null_ls = require('null-ls')
 null_ls.setup({
