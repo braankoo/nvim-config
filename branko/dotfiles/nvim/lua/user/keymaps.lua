@@ -58,21 +58,36 @@ vim.keymap.set('v', '<C-j>', ":move '>+1<CR>gv=gv")
 
 -- Equalize window sizes
 vim.keymap.set('n', '<C-w>=', '<C-w>=')
---Lazygit
+-- Lazygit (floating window u trenutnom direktorijumu).
+vim.keymap.set('n', '<leader>lg', function()
+  require('user.tools.lazygit').open()
+end, { desc = 'Open Lazygit', noremap = true, silent = true })
+
+-- Midnight Commander.
+vim.keymap.set('n', '<leader>mc', function()
+  require('user.tools.mc').open()
+end, { desc = 'Open Midnight Commander', noremap = true, silent = true })
+
+-- :cd na folder koji sadrži .env.
+vim.keymap.set('n', '<leader>er', function()
+  require('user.tools.env').cd_to_env_root()
+end, { desc = 'cd to env root', noremap = true, silent = true })
+
+-- Docker shell prema docker.json u parent folderima.
+vim.keymap.set('n', '<leader>dks', '<cmd>DockerShell<CR>', { desc = 'Docker shell', noremap = true, silent = true })
+
 --Lazydocker
 vim.keymap.set("n", "<leader>ld", "<cmd>LazyDocker<CR>", { desc = "Toggle LazyDocker", noremap = true, silent = true })
+
+vim.keymap.set('n', '<leader>dglr', function()
+  require('user.plugins.docker-laravel-routes').open()
+end, { desc = 'Grep Laravel Routes' })
 
 --Format
 vim.keymap.set("n","<leader>fmt","<cmd>Format<CR>", { desc = "Format"})
 --Terminal
 vim.keymap.set("n","<leader>ft","<cmd>FloatermToggle<cmd>", { desc = "Toggle Terminal" })
 
-
-vim.keymap.set('i', '<C-J>', 'copilot#Accept("\\<CR>")', {
-          expr = true,
-          replace_keycodes = false
-        })
-vim.g.copilot_no_tab_map = true
 
 vim.keymap.set('n', '<leader>cct', ':CopilotChatToggle<CR>', { desc = 'Toggle Copilot Chat' })
 vim.keymap.set('n', '<leader>ccc', ':CopilotChatCommit<CR>', { desc = 'Toggle Copilot Chat Commit' })

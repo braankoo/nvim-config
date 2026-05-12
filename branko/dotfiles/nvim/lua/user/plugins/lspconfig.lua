@@ -6,8 +6,25 @@ local capabilities = require('cmp_nvim_lsp').default_capabilities(vim.lsp.protoc
 
 --PHP
 
-require('lspconfig').intelephense.setup({capabilities = capabilities })
-
+require('lspconfig').intelephense.setup({
+    capabilities = capabilities,
+    settings = {
+        intelephense = {
+            stubs = {
+                "Core",
+                "standard",
+                "imagick",
+                "gd",
+                "pdo",
+                "mysql",
+                "mysqli"
+            }
+        }
+    },
+    on_attach = function(client, bufnr)
+        print("Intelephense pokrenuo sa settings:", vim.inspect(client.config.settings))
+    end
+})
 require('lspconfig').volar.setup({
         filetypes = {'typescript', 'javascript', 'javascriptreact', 'typescriptreact', 'vue', 'json'},
         init_options = {

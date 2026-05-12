@@ -27,7 +27,22 @@ require('telescope').setup({
                     ['<C-Up>'] = actions.cycle_history_prev,
                 }
             },
-            file_ignore_patterns = {'.git/'},
+            vimgrep_arguments = {
+                'rg', '--color=never', '--no-heading', '--with-filename',
+                '--line-number', '--column', '--smart-case',
+                '--max-filesize=1M',
+                '--max-columns=300',
+            },
+            file_ignore_patterns = {
+                '%.git/', 'node_modules/', 'vendor/', '%.cache/',
+                'dist/', 'build/', '%.lock', '%-lock%.json',
+                '%.min%.js', '%.min%.css',
+            },
+            preview = {
+                filesize_limit = 1,
+                timeout = 250,
+                treesitter = false,
+            },
         },
         pickers = {
             find_files = {

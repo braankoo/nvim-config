@@ -40,6 +40,7 @@ vim.opt.exrc = true
 vim.opt.secure = true
 vim.opt.titlestring = '%f // nvim'
 vim.opt.inccommand = 'split'
+vim.opt.timeoutlen = 100
 
 
 vim.api.nvim_create_autocmd({"VimEnter", "BufEnter", "WinEnter"}, {
