@@ -1,0 +1,6 @@
+# macOS
+.DS_Store
+
+# Neovim
+branko/dotfiles/nvim/nvim-profile.log
+*.log
